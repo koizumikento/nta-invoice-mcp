@@ -2,6 +2,8 @@
 
 国税庁のインボイス公表情報を、MCP・CLI・Pythonから照会できます。取引日時点の登録状況を最大10件まとめて確認でき、登録番号ごとの公表履歴も取得できます。
 
+[MCP登録](#mcpクライアントに登録する) · [CLI](#cliで使う) · [Pythonライブラリ](#pythonライブラリとして使う)
+
 ## 利用前に
 
 [uv](https://docs.astral.sh/uv/) と Git が必要です。Python 3.12以上に対応しています。[国税庁への届出](https://www.invoice-kohyo.nta.go.jp/web-api/index.html)で発行されたインボイスWeb-API用のアプリケーションIDが必要です。下の例の `YOUR_NTA_INVOICE_APP_ID` を手元の設定で差し替えてください。
@@ -75,13 +77,15 @@ uvx --python 3.12 --from git+https://github.com/koizumikento/nta-invoice-mcp.git
 uvx --python 3.12 --from git+https://github.com/koizumikento/nta-invoice-mcp.git@main nta-invoice-mcp get-invoice-registration-history --registration-number T0000000000000
 ```
 
-## Pythonから呼び出す
+## Pythonライブラリとして使う
+
+自分のPythonプロジェクト（`pyproject.toml` があるディレクトリ）で依存関係に追加します。[CLIで使う](#cliで使う)と同様に、実行するシェルで `NTA_INVOICE_APP_ID` を設定してください。
 
 ```sh
-git clone https://github.com/koizumikento/nta-invoice-mcp.git
-cd nta-invoice-mcp
-uv sync --locked
+uv add "git+https://github.com/koizumikento/nta-invoice-mcp.git@main"
 ```
+
+次のコードを `example.py` に保存し、同じディレクトリで `uv run python example.py` を実行します。
 
 ```python
 import asyncio
