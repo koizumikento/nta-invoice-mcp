@@ -10,7 +10,13 @@ async def test_stdio_tool_contract() -> None:
     params = StdioServerParameters(command=sys.executable, args=["-m", "nta_invoice_mcp"])
     async with Client(params, mode="legacy", read_timeout_seconds=10) as client:
         result = await client.list_tools()
-    assert {tool.name for tool in result.tools} == {"lookup_invoice_registration"}
+    assert {tool.name for tool in result.tools} == {
+        "lookup_invoice_registration",
+        "lookup_invoice_registrations",
+        "get_invoice_registration_history",
+    }
+    batch = next(tool for tool in result.tools if tool.name == "lookup_invoice_registrations")
+    assert batch.input_schema["properties"]["registration_numbers"]["maxItems"] == 10
     assert all(tool.annotations and tool.annotations.read_only_hint for tool in result.tools)
 
 

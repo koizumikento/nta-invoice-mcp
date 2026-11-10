@@ -6,7 +6,11 @@ from collections.abc import Sequence
 
 import httpx
 
-from .client import lookup_invoice_registration
+from .client import (
+    get_invoice_registration_history,
+    lookup_invoice_registration,
+    lookup_invoice_registrations,
+)
 
 
 def run_cli(argv: Sequence[str]) -> None:
@@ -17,6 +21,15 @@ def run_cli(argv: Sequence[str]) -> None:
     command.add_argument("--registration-number", required=True)
     command.add_argument("--day", required=True)
     command.set_defaults(handler=lookup_invoice_registration)
+
+    command = commands.add_parser("lookup-invoice-registrations", argument_default=SUPPRESS)
+    command.add_argument("--registration-numbers", nargs="+", required=True)
+    command.add_argument("--day", required=True)
+    command.set_defaults(handler=lookup_invoice_registrations)
+
+    command = commands.add_parser("get-invoice-registration-history", argument_default=SUPPRESS)
+    command.add_argument("--registration-number", required=True)
+    command.set_defaults(handler=get_invoice_registration_history)
 
     arguments = vars(parser.parse_args(argv))
     handler = arguments.pop("handler")

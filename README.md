@@ -1,6 +1,6 @@
 # nta-invoice-mcp
 
-国税庁のインボイス公表サイトで、登録番号1件を指定日で照会できます。登録日・取消日・失効日と、公表情報上の登録状況を確認できます。
+国税庁のインボイス公表情報を、MCP・CLI・Pythonから照会できます。取引日時点の登録状況を最大10件まとめて確認でき、登録番号ごとの公表履歴も取得できます。
 
 ## 利用前に
 
@@ -43,11 +43,19 @@ codex mcp list
 
 > この取引先のインボイス登録番号について、2024年4月1日時点の公表上の登録状況と出典を確認して。
 
+> この取引先の登録履歴から、取消日や失効日が公表されているか確認して。
+
 ## MCPツール
 
-### `lookup_invoice_registration`
+| ツール | 用途 | 引数 |
+| --- | --- | --- |
+| `lookup_invoice_registration` | 1件の登録状況を指定日で確認する | `registration_number`, `day` |
+| `lookup_invoice_registrations` | 最大10件の登録状況を同じ日付で確認する | `registration_numbers`（配列）, `day` |
+| `get_invoice_registration_history` | 1件の公表履歴を取得する | `registration_number` |
 
-`registration_number` は `T` と13桁の数字、`day` は `YYYY-MM-DD` です。`status` は `registered`（登録あり）、`not_registered`（登録期間外）、`no_record`（指定条件の公表情報なし）、`unknown`（公表情報はあるが登録日がなく判定不可）のいずれかです。データの最終更新日も返します。
+登録番号は `T` と13桁の数字、日付は `YYYY-MM-DD` です。指定日照会の `status` は `registered`（登録あり）、`not_registered`（登録期間外）、`no_record`（指定条件の公表情報なし）、`unknown`（公表情報はあるが登録日がなく判定不可）のいずれかです。一括照会では、公表情報が見つからなかった番号も含めて入力順に返します。
+
+履歴は古い順に返します。各行に名称・登録日・取消日・失効日・更新日があり、`process_code` で新規（`"01"`）、公表内容の変更（`"02"`）、失効（`"03"`）、取消（`"04"`）を確認できます。`latest` が `"1"` の行は最新、`"0"` は過去の履歴です。各ツールはデータの最終更新日と出典も返します。
 
 ## CLIで使う
 
@@ -63,6 +71,8 @@ macOSやLinuxのシェルでは `export NTA_INVOICE_APP_ID="YOUR_NTA_INVOICE_APP
 
 ```sh
 uvx --python 3.12 --from git+https://github.com/koizumikento/nta-invoice-mcp.git@main nta-invoice-mcp lookup-invoice-registration --registration-number T0000000000000 --day 2024-04-01
+uvx --python 3.12 --from git+https://github.com/koizumikento/nta-invoice-mcp.git@main nta-invoice-mcp lookup-invoice-registrations --registration-numbers T0000000000000 T0000000000001 --day 2024-04-01
+uvx --python 3.12 --from git+https://github.com/koizumikento/nta-invoice-mcp.git@main nta-invoice-mcp get-invoice-registration-history --registration-number T0000000000000
 ```
 
 ## Pythonから呼び出す
@@ -76,10 +86,17 @@ uv sync --locked
 ```python
 import asyncio
 
-from nta_invoice_mcp import lookup_invoice_registration
+from nta_invoice_mcp import (
+    get_invoice_registration_history,
+    lookup_invoice_registration,
+    lookup_invoice_registrations,
+)
 
-result = asyncio.run(lookup_invoice_registration("T0000000000000", "2024-04-01"))
-print(result)
+number = "T0000000000000"
+day = "2024-04-01"
+print(asyncio.run(lookup_invoice_registration(number, day)))
+print(asyncio.run(lookup_invoice_registrations([number, "T0000000000001"], day)))
+print(asyncio.run(get_invoice_registration_history(number)))
 ```
 
 すでにイベントループがある場合は、関数を直接 `await` してください。
@@ -87,6 +104,8 @@ print(result)
 ## 出典と利用条件
 
 コードはMIT Licenseです。照会結果を扱う場合は、個人事業者の情報を含め、国税庁の利用規約に従って管理してください。
+
+登録番号を指定して照会する用途に対応しています。国税庁APIの期間指定による全件差分取得は、継続監視の用途が決まった段階で検討する範囲です。
 
 このサービスは、適格請求書発行事業者公表システムWeb-API機能を利用して取得した情報をもとに作成しているが、サービスの内容は国税庁によって保証されたものではない。
 
